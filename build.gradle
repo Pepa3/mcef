@@ -18,7 +18,7 @@ apply plugin: 'forge'
 sourceCompatibility = targetCompatibility = "1.7"
 compileJava { sourceCompatibility = targetCompatibility = "1.7" }
 
-version = "1.7.10-1.21"
+version = "1.7.10-0.5"
 group = "net.montoyo.mcef"
 archivesBaseName = "MCEF"
 

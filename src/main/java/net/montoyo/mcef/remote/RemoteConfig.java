@@ -167,13 +167,14 @@ public class RemoteConfig {
 			}
 		}
 		
-		JsonElement mcVersions = json.get("latestVersions");
+		version = MCEF.VERSION;
+		/*JsonElement mcVersions = json.get("latestVersions");
 		if(mcVersions != null && mcVersions.isJsonObject()) {
-            JsonElement cVer = mcVersions.getAsJsonObject().get(Minecraft.getMinecraft().getVersion());
+			JsonElement cVer = mcVersions.getAsJsonObject().get(Minecraft.getMinecraft().getVersion());
 
-            if(cVer != null && cVer.isJsonPrimitive())
-                version = cVer.getAsString();
-		}
+			if(cVer != null && cVer.isJsonPrimitive())
+				version = cVer.getAsString();
+		}*/
 	}
 
     private void addResources(JsonObject res, String pform) {
