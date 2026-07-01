@@ -11,8 +11,6 @@ import java.nio.ByteBuffer;
 
 import net.minecraft.client.renderer.Tessellator;
 
-import net.minecraft.client.renderer.VertexBuffer;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.EXTBgra;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -57,15 +55,16 @@ class CefRenderer {
         if (view_width_ == 0 || view_height_ == 0)
             return;
 
-        Tessellator t = Tessellator.getInstance();
-        VertexBuffer vb = t.getBuffer();
+        Tessellator t = Tessellator.instance;
         glBindTexture(GL_TEXTURE_2D, texture_id_[0]);
-
-        vb.begin(GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
-        vb.pos(x1, y1, 0.0).tex(0.0, 1.0).color(255, 255, 255, 255).endVertex();
-        vb.pos(x2, y1, 0.0).tex(1.f, 1.f).color(255, 255, 255, 255).endVertex();
-        vb.pos(x2, y2, 0.0).tex(1.f, 0.0).color(255, 255, 255, 255).endVertex();
-        vb.pos(x1, y2, 0.0).tex(0.0, 0.0).color(255, 255, 255, 255).endVertex();
+        
+		t.startDrawingQuads();
+        t.setColorOpaque(255, 255, 255);
+		
+        t.addVertexWithUV(x1, y2, 0,       0   , 1.f);
+        t.addVertexWithUV(x2, y2, 0,       1.f, 1.f);
+        t.addVertexWithUV(x2, y1, 0,       1.f, 0);
+        t.addVertexWithUV(x1, y1, 0,       0   , 0);
         t.draw();
 
         glBindTexture(GL_TEXTURE_2D, 0);

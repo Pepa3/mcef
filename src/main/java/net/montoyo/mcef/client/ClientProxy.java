@@ -4,11 +4,11 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatStyle;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.client.SplashProgress;
+import cpw.mods.fml.client.SplashProgress;
 import net.montoyo.mcef.ShutdownPatcher;
 import net.montoyo.mcef.utilities.ForgeProgressListener;
 import net.montoyo.mcef.utilities.IProgressListener;
@@ -20,11 +20,11 @@ import org.cef.browser.CefBrowserOsr;
 import org.cef.browser.CefMessageRouter;
 import org.cef.browser.CefMessageRouter.CefMessageRouterConfig;
 
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.PlayerEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.relauncher.Side;
 import net.minecraft.client.Minecraft;
 import net.montoyo.mcef.BaseProxy;
 import net.montoyo.mcef.MCEF;
@@ -154,7 +154,7 @@ public class ClientProxy extends BaseProxy {
             (new ShutdownThread()).start();
         }
 
-        MinecraftForge.EVENT_BUS.register(this);
+        FMLCommonHandler.instance().bus().register(this);
 		if(MCEF.ENABLE_EXAMPLE)
 			(new ExampleMod()).onInit();
 		
@@ -218,11 +218,11 @@ public class ClientProxy extends BaseProxy {
 		if(updateStr == null || !MCEF.WARN_UPDATES)
 			return;
 		
-		Style cs = new Style();
-		cs.setColor(TextFormatting.LIGHT_PURPLE);
+		ChatStyle cs = new ChatStyle();
+		cs.setColor(EnumChatFormatting.LIGHT_PURPLE);
 		
-		TextComponentString cct = new TextComponentString(updateStr);
-		cct.setStyle(cs);
+		ChatComponentText cct = new ChatComponentText(updateStr);
+		cct.setChatStyle(cs);
 		
 		ev.player.addChatComponentMessage(cct);
 	}

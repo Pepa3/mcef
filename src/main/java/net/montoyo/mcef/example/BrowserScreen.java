@@ -57,7 +57,7 @@ public class BrowserScreen extends GuiScreen {
             buttonList.add(vidMode = (new GuiButton(4, width - 40, 0, 20, 20, "YT")));
             vidMode.enabled = false;
 			
-			url = new GuiTextField(5, fontRendererObj, 40, 0, width - 100, 20);
+			url = new GuiTextField(fontRendererObj, 40, 0, width - 100, 20);
 			url.setMaxStringLength(65535);
 			url.setText("mod://mcef/home.html");
 		} else {
@@ -73,7 +73,7 @@ public class BrowserScreen extends GuiScreen {
 			min.xPosition = width - 20;
 			
 			String old = url.getText();
-			url = new GuiTextField(5, fontRendererObj, 40, 0, width - 100, 20);
+			url = new GuiTextField(fontRendererObj, 40, 0, width - 100, 20);
 			url.setMaxStringLength(65535);
 			url.setText(old);
 		}

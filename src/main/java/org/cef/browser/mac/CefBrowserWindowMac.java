@@ -5,7 +5,6 @@
 package org.cef.browser.mac;
 
 import java.awt.Component;
-import java.awt.peer.ComponentPeer;
 
 import org.cef.browser.CefBrowserWindow;
 

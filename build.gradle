@@ -18,10 +18,18 @@ apply plugin: 'forge'
 sourceCompatibility = targetCompatibility = "1.7"
 compileJava { sourceCompatibility = targetCompatibility = "1.7" }
 
-version = "1.7.10-0.5"
+version = "1.7.10-0.6"
 group = "net.montoyo.mcef"
 archivesBaseName = "MCEF"
 
 minecraft {
     version = "1.7.10-10.13.4.1614-1.7.10"
+    runDir = "run"
+}
+
+jar {
+    manifest {
+        attributes 'FMLCorePlugin': 'net.montoyo.mcef.ShutdownPatcher'
+        attributes 'FMLCorePluginContainsFMLMod': 'true'
+    }
 }

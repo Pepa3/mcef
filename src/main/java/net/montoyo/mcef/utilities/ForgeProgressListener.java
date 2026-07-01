@@ -1,6 +1,6 @@
 package net.montoyo.mcef.utilities;
 
-import net.minecraftforge.fml.common.ProgressManager;
+import cpw.mods.fml.common.ProgressManager;
 
 public class ForgeProgressListener implements IProgressListener {
 

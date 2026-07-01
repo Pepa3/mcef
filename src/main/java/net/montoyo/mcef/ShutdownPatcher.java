@@ -1,6 +1,6 @@
 package net.montoyo.mcef;
 
-import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
+import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import net.minecraft.launchwrapper.IClassTransformer;
 import net.montoyo.mcef.utilities.Log;
 import org.objectweb.asm.*;
