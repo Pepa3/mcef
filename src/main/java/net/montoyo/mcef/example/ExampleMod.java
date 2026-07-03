@@ -1,6 +1,7 @@
 package net.montoyo.mcef.example;
 
 import net.minecraftforge.common.MinecraftForge;
+import net.montoyo.mcef.utilities.Log;
 import org.lwjgl.input.Keyboard;
 
 import net.minecraft.client.Minecraft;
@@ -115,8 +116,7 @@ public class ExampleMod implements IDisplayHandler, IJSQueryHandler {
 	}
 
 	@Override
-	public boolean onTooltip(IBrowser browser, String text) {
-		return false;
+	public void onTooltip(IBrowser browser, String text) {
 	}
 
 	@Override
@@ -124,20 +124,21 @@ public class ExampleMod implements IDisplayHandler, IJSQueryHandler {
 	}
 
 	@Override
-	public boolean onConsoleMessage(IBrowser browser, String message, String source, int line) {
-		return false;
-	}
-
-	@Override
 	public boolean handleQuery(IBrowser b, long queryId, String query, boolean persistent, IJSQueryCallback cb) {
-		if(b == getBrowser() && query.equalsIgnoreCase("username")) {
-			try {
-				String name = mc.getSession().getUsername();
-				cb.success(name);
-			} catch(Throwable t) {
-				cb.failure(500, "Internal error.");
-				t.printStackTrace();
-			}
+		if(b != null && query.equalsIgnoreCase("username")) {
+		    if(b.getURL().startsWith("mod://")) {
+                //Only allow MCEF URLs to get the player's username to keep his identity secret
+
+				try {
+					String name = mc.getSession().getUsername();
+					cb.success(name);
+				} catch(Throwable t) {
+					cb.failure(500, "Internal error.");
+					Log.warning("Could not get username from JavaScript:");
+					t.printStackTrace();
+				}
+            } else
+                cb.failure(403, "Can't access username from external page");
 			
 			return true;
 		}

@@ -10,6 +10,7 @@ import java.util.Map;
 @IFMLLoadingPlugin.Name(value = "ShutdownPatcher")
 @IFMLLoadingPlugin.TransformerExclusions(value = "net.montoyo.mcef.")
 @IFMLLoadingPlugin.SortingIndex(value = 90007531) //It has to run after the searge-name transformation
+@IFMLLoadingPlugin.MCVersion("1.7.10")
 public class ShutdownPatcher implements IFMLLoadingPlugin, IClassTransformer {
 
     private static boolean PATCH_OK = false;

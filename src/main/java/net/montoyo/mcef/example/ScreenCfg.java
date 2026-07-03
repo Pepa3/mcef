@@ -3,7 +3,6 @@ package net.montoyo.mcef.example;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.Tessellator;
 import net.montoyo.mcef.api.IBrowser;
-import net.montoyo.mcef.api.MCEFApi;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
