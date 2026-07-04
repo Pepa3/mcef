@@ -24,7 +24,6 @@ import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
-import cpw.mods.fml.relauncher.Side;
 import net.minecraft.client.Minecraft;
 import net.montoyo.mcef.BaseProxy;
 import net.montoyo.mcef.MCEF;
@@ -44,7 +43,6 @@ public class ClientProxy extends BaseProxy {
     private CefApp cefApp;
     private CefClient cefClient;
     private CefMessageRouter cefRouter;
-    private boolean firstRouter = true;
     private final ArrayList<CefBrowserOsr> browsers = new ArrayList<CefBrowserOsr>();
     private String updateStr;
     private final Minecraft mc = Minecraft.getMinecraft();
@@ -195,18 +193,13 @@ public class ClientProxy extends BaseProxy {
     
     @Override
     public void registerJSQueryHandler(IJSQueryHandler iqh) {
-        //TODO: Make sure this is not a trap, like it was for .addDisplayHandler()
-
         if(!VIRTUAL)
-            cefRouter.addHandler(new MessageRouter(iqh), firstRouter); //SwingUtilities.invokeLater() ?
-        
-        if(firstRouter)
-            firstRouter = false;
+            cefRouter.addHandler(new MessageRouter(iqh), false);
     }
     
     @SubscribeEvent
-    public void onTick(TickEvent ev) {
-        if(ev.side == Side.CLIENT && ev.phase == TickEvent.Phase.START && ev.type == TickEvent.Type.CLIENT) {
+    public void onTick(TickEvent.RenderTickEvent ev) {
+        if(ev.phase == TickEvent.Phase.START) {
             mc.mcProfiler.startSection("MCEF");
             
             for(CefBrowserOsr b: browsers)
