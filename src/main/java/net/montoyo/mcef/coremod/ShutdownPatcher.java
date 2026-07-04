@@ -1,8 +1,9 @@
-package net.montoyo.mcef;
+package net.montoyo.mcef.coremod;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import net.minecraft.launchwrapper.IClassTransformer;
-import net.montoyo.mcef.utilities.Log;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.objectweb.asm.*;
 
 import java.util.Map;
@@ -23,7 +24,7 @@ public class ShutdownPatcher implements IFMLLoadingPlugin, IClassTransformer {
 
     @Override
     public String[] getASMTransformerClass() {
-        return new String[] { "net.montoyo.mcef.ShutdownPatcher" };
+        return new String[] { "net.montoyo.mcef.coremod.ShutdownPatcher" };
     }
 
     @Override
@@ -51,7 +52,7 @@ public class ShutdownPatcher implements IFMLLoadingPlugin, IClassTransformer {
             return cls;
 
         boolean envObf = !name.equals(deobfName); //If the current environment is obfuscated
-        Log.info("Now transforming %s, aka %s (obfuscated: %s)", name, deobfName, envObf ? "yes" : "no");
+        log("Now transforming %s, aka %s (obfuscated: %s)", name, deobfName, envObf ? "yes" : "no");
 
         try {
             ClassReader cr = new ClassReader(cls);
@@ -62,7 +63,7 @@ public class ShutdownPatcher implements IFMLLoadingPlugin, IClassTransformer {
             return cw.toByteArray();
         } catch(Throwable t) {
             t.printStackTrace();
-            Log.error("Failed to setup Minecraft shutdown detector.");
+            log("Failed to setup Minecraft shutdown detector.");
         }
 
         return cls; //Abort class transforming
@@ -96,10 +97,9 @@ public class ShutdownPatcher implements IFMLLoadingPlugin, IClassTransformer {
 
                 patched = true;
                 PATCH_OK = true;
-                Log.info("Target section has been patched.");
+                log("Target section has been patched.");
             }
         }
-
     }
 
     private static class McVisitor extends ClassVisitor {
@@ -116,7 +116,7 @@ public class ShutdownPatcher implements IFMLLoadingPlugin, IClassTransformer {
             MethodVisitor mv = cv.visitMethod(access, name, desc, signature, exceptions);
             if(access == Opcodes.ACC_PUBLIC && desc.equals("()V")) { //void run()
                 if((envObf && name.equals(OBF_RUN_METHOD)) || name.equals("run")) {
-                    Log.info("run() method found; transforming...");
+                    log("run() method found; transforming...");
                     return new RunVisitor(mv, envObf);
                 }
             }
@@ -124,6 +124,10 @@ public class ShutdownPatcher implements IFMLLoadingPlugin, IClassTransformer {
             return mv;
         }
 
+    }
+
+    private static void log(String str, Object ... args) {
+        LogManager.getLogger("MCEF").log(Level.INFO, String.format(str, args));
     }
 
 }

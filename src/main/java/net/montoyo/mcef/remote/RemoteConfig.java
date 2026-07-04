@@ -167,7 +167,6 @@ public class RemoteConfig {
             }
         }
         
-        version = MCEF.VERSION;
         /*JsonElement mcVersions = json.get("latestVersions");
         if(mcVersions != null && mcVersions.isJsonObject()) {
             JsonElement cVer = mcVersions.getAsJsonObject().get(Minecraft.getMinecraft().getVersion());
@@ -175,6 +174,7 @@ public class RemoteConfig {
             if(cVer != null && cVer.isJsonPrimitive())
                 version = cVer.getAsString();
         }*/
+		version = MCEF.VERSION;
     }
 
     private void addResources(JsonObject res, String pform) {
@@ -283,6 +283,10 @@ public class RemoteConfig {
         }
 
         return fl.save() && allOk;
+    }
+
+    public File[] getResourceArray() {
+        return resources.stream().map(r -> Resource.getLocationOf(r.getFileName())).toArray(File[]::new);
     }
 
 }

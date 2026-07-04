@@ -1,17 +1,24 @@
 package net.montoyo.mcef.client;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatStyle;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraftforge.common.MinecraftForge;
 import cpw.mods.fml.client.SplashProgress;
-import net.montoyo.mcef.ShutdownPatcher;
+import net.montoyo.mcef.coremod.ShutdownPatcher;
+import net.montoyo.mcef.api.IScheme;
 import net.montoyo.mcef.utilities.ForgeProgressListener;
 import net.montoyo.mcef.utilities.IProgressListener;
+import net.montoyo.mcef.utilities.Util;
 import org.cef.CefApp;
 import org.cef.CefClient;
 import org.cef.CefSettings;
@@ -34,6 +41,7 @@ import net.montoyo.mcef.example.ExampleMod;
 import net.montoyo.mcef.remote.RemoteConfig;
 import net.montoyo.mcef.utilities.Log;
 import net.montoyo.mcef.virtual.VirtualBrowser;
+import org.cef.browser.CefRenderer;
 
 public class ClientProxy extends BaseProxy {
     
@@ -43,13 +51,28 @@ public class ClientProxy extends BaseProxy {
     private CefApp cefApp;
     private CefClient cefClient;
     private CefMessageRouter cefRouter;
-    private final ArrayList<CefBrowserOsr> browsers = new ArrayList<CefBrowserOsr>();
+    private final ArrayList<CefBrowserOsr> browsers = new ArrayList<>();
     private String updateStr;
     private final Minecraft mc = Minecraft.getMinecraft();
     private final DisplayHandler displayHandler = new DisplayHandler();
-    
+    private final HashMap<String, String> mimeTypeMap = new HashMap<>();
+    private final AppHandler appHandler = new AppHandler();
+    private ExampleMod exampleMod;
+
+    @Override
+    public void onPreInit() {
+        exampleMod = new ExampleMod();
+        exampleMod.onPreInit(); //Do it even if example mod is disabled because it registers the "mod://" scheme
+    }
+
     @Override
     public void onInit() {
+        if(MCEF.DISABLE_GPU_RENDERING) {
+            Log.info("GPU rendering is disabled because the new launcher sucks.");
+            appHandler.setArgs(new String[] { "--disable-gpu" });
+        } else
+            appHandler.setArgs(new String[0]);
+
         boolean enableForgeSplash = false;
         try {
             Field f = SplashProgress.class.getDeclaredField("enabled");
@@ -76,6 +99,8 @@ public class ClientProxy extends BaseProxy {
             ipl = new UpdateFrame();
         
         cfg.load();
+        File[] resourceArray = cfg.getResourceArray();
+
         if(!cfg.updateFileListing(fileListing, false))
             Log.warning("There was a problem while establishing file list. Uninstall may not delete all files.");
 
@@ -103,8 +128,8 @@ public class ClientProxy extends BaseProxy {
             String[] paths = (String[]) pathsField.get(null);
             String[] newList = new String[paths.length + 1];
             
-            System.arraycopy(paths, 0, newList, 0, paths.length);
-            newList[paths.length] = ROOT.replace('/', File.separatorChar);
+            System.arraycopy(paths, 0, newList, 1, paths.length);
+            newList[0] = ROOT.replace('/', File.separatorChar);
             pathsField.set(null, newList);
         } catch(Exception e) {
             Log.error("Failed to do it! Entering virtual mode...");
@@ -115,6 +140,12 @@ public class ClientProxy extends BaseProxy {
         }
         
         Log.info("Done without errors.");
+
+        if(OS.isLinux()) {
+            Log.info("Applying linux patch...");
+            LinuxPatch.doPatch(resourceArray);
+        }
+
         String exeSuffix;
         if(OS.isWindows())
             exeSuffix = ".exe";
@@ -130,11 +161,35 @@ public class ClientProxy extends BaseProxy {
         //settings.log_severity = CefSettings.LogSeverity.LOGSEVERITY_VERBOSE;
         
         try {
+            ArrayList<String> libs = new ArrayList<>();
+
+            if(OS.isWindows()) {
+                libs.add(System.getProperty("sun.arch.data.model").equals("64") ? "d3dcompiler_47.dll" : "d3dcompiler_43.dll");
+                libs.add("libGLESv2.dll");
+                libs.add("libEGL.dll");
+                libs.add("libcef.dll");
+                libs.add("jcef.dll");
+            } else {
+                libs.add("libcef.so");
+                libs.add("libjcef.so");
+            }
+
+            for(String lib: libs) {
+                File f = new File(ROOT, lib);
+                try {
+                    f = f.getCanonicalFile();
+                } catch(IOException ex) {
+                    f = f.getAbsoluteFile();
+                }
+
+                System.load(f.getPath());
+            }
+
             cefApp = CefApp.getInstance(settings);
             //cefApp.myLoc = ROOT.replace('/', File.separatorChar);
 
-            ModScheme.loadMimeTypeMapping();
-            CefApp.addAppHandler(new AppHandler());
+            loadMimeTypeMapping();
+            CefApp.addAppHandler(appHandler);
             cefClient = cefApp.createClient();
         } catch(Throwable t) {
             Log.error("Going in virtual mode; couldn't initialize CEF.");
@@ -156,7 +211,7 @@ public class ClientProxy extends BaseProxy {
 
         FMLCommonHandler.instance().bus().register(this);
         if(MCEF.ENABLE_EXAMPLE)
-            (new ExampleMod()).onInit();
+            exampleMod.onInit();
         
         Log.info("MCEF loaded successfuly.");
     }
@@ -188,7 +243,7 @@ public class ClientProxy extends BaseProxy {
     @Override
     public void openExampleBrowser(String url) {
         if(MCEF.ENABLE_EXAMPLE)
-            ExampleMod.INSTANCE.showScreen(url);
+            exampleMod.showScreen(url);
     }
     
     @Override
@@ -196,7 +251,17 @@ public class ClientProxy extends BaseProxy {
         if(!VIRTUAL)
             cefRouter.addHandler(new MessageRouter(iqh), false);
     }
-    
+
+    @Override
+    public void registerScheme(String name, Class<? extends IScheme> schemeClass, boolean std, boolean local, boolean displayIsolated) {
+        appHandler.registerScheme(name, schemeClass, std, local, displayIsolated);
+    }
+
+    @Override
+    public boolean isSchemeRegistered(String name) {
+        return appHandler.isSchemeRegistered(name);
+    }
+
     @SubscribeEvent
     public void onTick(TickEvent.RenderTickEvent ev) {
         if(ev.phase == TickEvent.Phase.START) {
@@ -247,6 +312,9 @@ public class ClientProxy extends BaseProxy {
         browsers.clear();
         cefClient.dispose();
 
+        if(MCEF.CHECK_VRAM_LEAK)
+            CefRenderer.dumpVRAMLeak();
+
         try {
             //Yea sometimes, this is needed for some reasons.
             Thread.sleep(100);
@@ -255,4 +323,86 @@ public class ClientProxy extends BaseProxy {
         cefApp.N_Shutdown();
     }
 
+    public void loadMimeTypeMapping() {
+        Pattern p = Pattern.compile("^(\\S+)\\s+(\\S+)\\s*(\\S*)\\s*(\\S*)$");
+        String line = "";
+        int cLine = 0;
+        mimeTypeMap.clear();
+
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(ClientProxy.class.getResourceAsStream("/assets/mcef/mime.types")));
+
+            while(true) {
+                cLine++;
+                line = br.readLine();
+                if(line == null)
+                    break;
+
+                line = line.trim();
+                if(!line.startsWith("#")) {
+                    Matcher m = p.matcher(line);
+                    if(!m.matches())
+                        continue;
+
+                    mimeTypeMap.put(m.group(2), m.group(1));
+                    if(m.groupCount() >= 4 && !m.group(3).isEmpty()) {
+                        mimeTypeMap.put(m.group(3), m.group(1));
+
+                        if(m.groupCount() >= 5 && !m.group(4).isEmpty())
+                            mimeTypeMap.put(m.group(4), m.group(1));
+                    }
+                }
+            }
+
+            Util.close(br);
+        } catch(Throwable e) {
+            Log.error("[Mime Types] Error while parsing \"%s\" at line %d:", line, cLine);
+            e.printStackTrace();
+        }
+
+        Log.info("Loaded %d mime types", mimeTypeMap.size());
+    }
+
+    @Override
+    public String mimeTypeFromExtension(String ext) {
+        ext = ext.toLowerCase();
+        String ret = mimeTypeMap.get(ext);
+        if(ret != null)
+            return ret;
+
+        //If the mimeTypeMap couldn't be loaded, fall back to common things
+        switch(ext) {
+            case "htm":
+            case "html":
+                return "text/html";
+
+            case "css":
+                return "text/css";
+
+            case "js":
+                return "text/javascript";
+
+            case "png":
+                return "image/png";
+
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+
+            case "gif":
+                return "image/gif";
+
+            case "svg":
+                return "image/svg+xml";
+
+            case "xml":
+                return "text/xml";
+
+            case "txt":
+                return "text/plain";
+
+            default:
+                return null;
+        }
+    }
 }

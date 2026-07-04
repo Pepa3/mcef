@@ -8,15 +8,26 @@ package org.cef.browser;
 
 import java.awt.Rectangle;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 import net.minecraft.client.renderer.Tessellator;
 
+import net.montoyo.mcef.MCEF;
 import net.montoyo.mcef.utilities.Log;
 import org.lwjgl.opengl.EXTBgra;
 
 import static org.lwjgl.opengl.GL11.*;
 
-class CefRenderer {
+public class CefRenderer {
+
+    //montoyo: debug tool
+    private static final ArrayList<Integer> GL_TEXTURES = new ArrayList<>();
+    public static void dumpVRAMLeak() {
+        Log.info(">>>>> MCEF: Beginning VRAM leak report");
+        GL_TEXTURES.forEach(tex -> Log.warning(">>>>> MCEF: This texture has not been freed: " + tex));
+        Log.info(">>>>> MCEF: End of VRAM leak report");
+    }
+
     private boolean transparent_;
     public int[] texture_id_ = new int[1];
     private int view_width_ = 0;
@@ -38,9 +49,12 @@ class CefRenderer {
         glEnable(GL_TEXTURE_2D);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         texture_id_[0] = glGenTextures();
-		assert (texture_id_[0] != 0);
+        assert (texture_id_[0] != 0);
 
+        if(MCEF.CHECK_VRAM_LEAK)
+            GL_TEXTURES.add(texture_id_[0]);
         glBindTexture(GL_TEXTURE_2D, texture_id_[0]);
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -48,8 +62,12 @@ class CefRenderer {
     }
 
     protected void cleanup() {
-        if(texture_id_[0] != 0)
+        if(texture_id_[0] != 0) {
+            if(MCEF.CHECK_VRAM_LEAK)
+                GL_TEXTURES.remove((Object) texture_id_[0]);
+
             glDeleteTextures(texture_id_[0]);
+        }
     }
 
     public void render(double x1, double y1, double x2, double y2) {
@@ -62,11 +80,11 @@ class CefRenderer {
         t.startDrawingQuads();
         t.setColorOpaque(255, 255, 255);
         
-        t.addVertexWithUV(x1, y2, 0,       0   , 1.f);
-        t.addVertexWithUV(x2, y2, 0,       1.f, 1.f);
-        t.addVertexWithUV(x2, y1, 0,       1.f, 0);
-        t.addVertexWithUV(x1, y1, 0,       0   , 0);
-		
+        t.addVertexWithUV(x1, y1, 0,       0   , 1.f);
+        t.addVertexWithUV(x2, y1, 0,       1.f, 1.f);
+        t.addVertexWithUV(x2, y2, 0,       1.f, 0);
+        t.addVertexWithUV(x1, y2, 0,       0   , 0);
+        
         t.draw();
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -176,7 +194,7 @@ class CefRenderer {
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, oldAlignement);
         glBindTexture(GL_TEXTURE_2D, 0);
-		if (transparent_) // Disable alpha blending.
+        if (transparent_) // Disable alpha blending.
             glDisable(GL_BLEND);
     }
 
