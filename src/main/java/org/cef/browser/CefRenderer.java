@@ -40,8 +40,8 @@ class CefRenderer {
         assert (texture_id_[0] != 0);
 
         glBindTexture(GL_TEXTURE_2D, texture_id_[0]);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -58,9 +58,9 @@ class CefRenderer {
         Tessellator t = Tessellator.instance;
         glBindTexture(GL_TEXTURE_2D, texture_id_[0]);
         
-		t.startDrawingQuads();
+        t.startDrawingQuads();
         t.setColorOpaque(255, 255, 255);
-		
+        
         t.addVertexWithUV(x1, y2, 0,       0   , 1.f);
         t.addVertexWithUV(x2, y2, 0,       1.f, 1.f);
         t.addVertexWithUV(x2, y1, 0,       1.f, 0);
@@ -175,6 +175,7 @@ class CefRenderer {
 
         // Disable 2D textures.
         // glDisable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         if (transparent_) {
             // Disable alpha blending.
