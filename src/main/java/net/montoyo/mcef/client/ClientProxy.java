@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,6 +25,7 @@ import org.cef.CefApp;
 import org.cef.CefClient;
 import org.cef.CefSettings;
 import org.cef.OS;
+import org.cef.browser.CefBrowser;
 import org.cef.browser.CefBrowserOsr;
 import org.cef.browser.CefMessageRouter;
 import org.cef.browser.CefMessageRouter.CefMessageRouterConfig;
@@ -42,6 +45,9 @@ import net.montoyo.mcef.remote.RemoteConfig;
 import net.montoyo.mcef.utilities.Log;
 import net.montoyo.mcef.virtual.VirtualBrowser;
 import org.cef.browser.CefRenderer;
+import org.cef.handler.CefLifeSpanHandlerAdapter;
+
+import javax.swing.*;
 
 public class ClientProxy extends BaseProxy {
     
@@ -59,6 +65,8 @@ public class ClientProxy extends BaseProxy {
     private final AppHandler appHandler = new AppHandler();
     private ExampleMod exampleMod;
 
+    public static final String LINUX_WIKI = "https://montoyo.net/wdwiki/Linux";
+
     @Override
     public void onPreInit() {
         exampleMod = new ExampleMod();
@@ -67,11 +75,7 @@ public class ClientProxy extends BaseProxy {
 
     @Override
     public void onInit() {
-        if(MCEF.DISABLE_GPU_RENDERING) {
-            Log.info("GPU rendering is disabled because the new launcher sucks.");
-            appHandler.setArgs(new String[] { "--disable-gpu" });
-        } else
-            appHandler.setArgs(new String[0]);
+        appHandler.setArgs(MCEF.CEF_ARGS);
 
         boolean enableForgeSplash = false;
         try {
@@ -142,8 +146,36 @@ public class ClientProxy extends BaseProxy {
         Log.info("Done without errors.");
 
         if(OS.isLinux()) {
-            Log.info("Applying linux patch...");
-            LinuxPatch.doPatch(resourceArray);
+            //LinuxPatch.doPatch(resourceArray); //Not needed, from what I experienced...
+
+            FileSystem fs = FileSystems.getDefault();
+            Path here = fs.getPath(mc.mcDataDir.getPath());
+            String[] libPath = Util.getenv("LD_LIBRARY_PATH").split(":");
+
+            if(Arrays.stream(libPath).filter(s -> !s.isEmpty()).map(fs::getPath).noneMatch(p -> Util.isSameFile(p, here))) {
+                Log.error("On Linux, you *HAVE* to add the .minecraft folder to LD_LIBRARY_PATH in order for MCEF to work.");
+                Log.error("You can do this by running the following command and then starting Minecraft within the same terminal:");
+                Log.error("export \"LD_LIBRARY_PATH=$LD_LIBRARY_PATH:%s\"", ROOT);
+                Log.error("");
+                Log.error("Since this has not been done yet, MCEF will now enter virtual mode and WILL NOT WORK.");
+                Log.error("For more info, please read %s", LINUX_WIKI);
+                Log.error("Please don't post a GitHub issue for this.");
+
+                int ans = JOptionPane.showConfirmDialog(null, "A bug on Linux requires you to add the Minecraft folder to LD_LIBRARY_PATH.\nThis has not been done, so MCEF will not work for now.\nWould you like to open the wiki page?",
+                        "MCEF Linux", JOptionPane.YES_NO_OPTION);
+
+                if(ans == JOptionPane.YES_OPTION) {
+                    try {
+                        Runtime.getRuntime().exec("xdg-open " + LINUX_WIKI);
+                    } catch(IOException ex) {
+                        Log.errorEx("Could not open wiki page", ex);
+                        JOptionPane.showMessageDialog(null, "Couldn't automatically open the wiki page. The link is:\n" + LINUX_WIKI, "MCEF Linux", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+
+                VIRTUAL = true;
+                return;
+            }
         }
 
         String exeSuffix;
@@ -151,20 +183,32 @@ public class ClientProxy extends BaseProxy {
             exeSuffix = ".exe";
         else
             exeSuffix = "";
+
+        File subproc = new File(ROOT, "jcef_helper" + exeSuffix);
+        if(OS.isLinux() && !subproc.canExecute()) {
+            try {
+                int retCode = Runtime.getRuntime().exec(new String[] { "/usr/bin/chmod", "+x", subproc.getAbsolutePath() }).waitFor();
+
+                if(retCode != 0)
+                    throw new RuntimeException("chmod exited with code " + retCode);
+            } catch(Throwable t) {
+                Log.errorEx("Error while giving execution rights to jcef_helper. MCEF will probably enter virtual mode. You can fix this by chmoding jcef_helper manually.", t);
+            }
+        }
         
         CefSettings settings = new CefSettings();
         settings.windowless_rendering_enabled = true;
         settings.background_color = settings.new ColorType(0, 255, 255, 255);
         settings.locales_dir_path = (new File(ROOT, "MCEFLocales")).getAbsolutePath();
         settings.cache_path = (new File(ROOT, "MCEFCache")).getAbsolutePath();
-        settings.browser_subprocess_path = (new File(ROOT, "jcef_helper" + exeSuffix)).getAbsolutePath(); //Temporary fix
+        settings.browser_subprocess_path = subproc.getAbsolutePath();
         //settings.log_severity = CefSettings.LogSeverity.LOGSEVERITY_VERBOSE;
         
         try {
             ArrayList<String> libs = new ArrayList<>();
 
             if(OS.isWindows()) {
-                libs.add(System.getProperty("sun.arch.data.model").equals("64") ? "d3dcompiler_47.dll" : "d3dcompiler_43.dll");
+                libs.add("d3dcompiler_47.dll");
                 libs.add("libGLESv2.dll");
                 libs.add("libEGL.dll");
                 libs.add("chrome_elf.dll");
@@ -205,6 +249,13 @@ public class ClientProxy extends BaseProxy {
         cefRouter = CefMessageRouter.create(new CefMessageRouterConfig("mcefQuery", "mcefCancel"));
         cefClient.addMessageRouter(cefRouter);
         cefClient.addDisplayHandler(displayHandler);
+        cefClient.addLifeSpanHandler(new CefLifeSpanHandlerAdapter() {
+            @Override
+            public boolean doClose(CefBrowser browser) {
+                browser.close(true);
+                return false;
+            }
+        });
 
         if(!ShutdownPatcher.didPatchSucceed()) {
             Log.warning("ShutdownPatcher failed to patch Minecraft.run() method; starting ShutdownThread...");
@@ -228,6 +279,7 @@ public class ClientProxy extends BaseProxy {
             return new VirtualBrowser();
         
         CefBrowserOsr ret = (CefBrowserOsr) cefClient.createBrowser(url, true, transp);
+        ret.setCloseAllowed();
         ret.createImmediately();
 		
         browsers.add(ret);
@@ -305,6 +357,14 @@ public class ClientProxy extends BaseProxy {
         return createBrowser(url, false);
     }
 
+    private void runMessageLoopFor(long ms) {
+        final long start = System.currentTimeMillis();
+
+        do {
+            cefApp.N_DoMessageLoopWork();
+        } while(System.currentTimeMillis() - start < ms);
+    }
+
     @Override
     public void onShutdown() {
         if(VIRTUAL)
@@ -317,17 +377,16 @@ public class ClientProxy extends BaseProxy {
             b.close();
 
         browsers.clear();
-        cefClient.dispose();
 
         if(MCEF.CHECK_VRAM_LEAK)
             CefRenderer.dumpVRAMLeak();
 
-        try {
-            //Yea sometimes, this is needed for some reasons.
-            Thread.sleep(250);
-        } catch(Throwable t) {}
+        runMessageLoopFor(100);
+        CefApp.forceShutdownState();
+        cefClient.dispose();
 
-        cefApp.N_Shutdown();
+        if(MCEF.SHUTDOWN_JCEF)
+            cefApp.N_Shutdown();
     }
 
     public void loadMimeTypeMapping() {

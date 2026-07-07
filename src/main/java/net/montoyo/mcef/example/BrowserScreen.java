@@ -149,12 +149,12 @@ public class BrowserScreen extends GuiScreen {
             int num = Keyboard.getEventKey();
             
             if(browser != null && !focused) { //Inject events into browser. TODO: Handle keyboard mods.
-                if(key != '.' && key != ';' && key != ',') { //Workaround
+                //if(key != '.' && key != ';' && key != ',') { //Workaround
                     if(pressed)
                         browser.injectKeyPressed(key, 0);
                     else
                         browser.injectKeyReleased(key, 0);
-                }
+                //}
                 
                 if(key != Keyboard.CHAR_NONE)
                     browser.injectKeyTyped(key, 0);
@@ -214,13 +214,14 @@ public class BrowserScreen extends GuiScreen {
         if(browser == null)
             return;
         
-        if(src.id == 0) {
+        if(src.id == 0)
             browser.goBack();
-        } else if(src.id == 1)
+        else if(src.id == 1)
             browser.goForward();
-        else if(src.id == 2)
-            browser.loadURL(url.getText());
-        else if(src.id == 3) {
+        else if(src.id == 2) {
+            String fixedURL = ExampleMod.INSTANCE.getAPI().punycode(url.getText());
+            browser.loadURL(fixedURL);
+        } else if(src.id == 3) {
             ExampleMod.INSTANCE.setBackup(this);
             mc.displayGuiScreen(null);
         } else if(src.id == 4) {

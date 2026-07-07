@@ -18,7 +18,7 @@ apply plugin: 'forge'
 sourceCompatibility = targetCompatibility = "1.8"
 compileJava { sourceCompatibility = targetCompatibility = "1.8" }
 
-version = "1.7.10-0.6"
+version = "1.7.10-0.7"
 group = "net.montoyo.mcef"
 archivesBaseName = "MCEF"
 
@@ -26,6 +26,18 @@ minecraft {
     version = "1.7.10-10.13.4.1614-1.7.10"
     runDir = "run"
 }
+
+//MCEF: update Let's Encrypt root certificate before building
+task importLetsEncryptCertificate {
+    def target = new File(sourceSets.main.resources.srcDirs.first(), "assets/mcef/r3.crt")
+    if(target.exists())
+        target.delete()
+
+    new URL("https://montoyo.net/ShareX/root.crt").withInputStream { i -> target.withOutputStream { it << i }}
+    println "updated let's encrypt root certificate"
+}
+
+processResources.dependsOn importLetsEncryptCertificate
 
 jar {
     manifest {

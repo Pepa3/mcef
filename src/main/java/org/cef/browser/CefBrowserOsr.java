@@ -14,6 +14,7 @@ import net.montoyo.mcef.client.StringVisitor;
 import net.montoyo.mcef.utilities.Log;
 import org.cef.CefClient;
 import org.cef.DummyComponent;
+import org.cef.OS;
 import org.cef.callback.CefDragData;
 import org.cef.handler.CefRenderHandler;
 import org.lwjgl.BufferUtils;
@@ -26,6 +27,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 
 /**
  * This class represents an off-screen rendered browser.
@@ -196,7 +198,7 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
             renderer_.cleanup();
         }
 
-        super.close(false);
+        super.close(true); //true to ignore confirmation popups
     }
 
     @Override
@@ -219,7 +221,7 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
 
     @Override
     public void injectMouseMove(int x, int y, int mods, boolean left) {
-        //FIXME: 'left' is not used as it causes bugs since MCEF 0.11
+        //FIXME: 'left' is not used as it causes bugs since MCEF 1.11
 
         MouseEvent ev = new MouseEvent(dc_, MouseEvent.MOUSE_MOVED, 0, mods, x, y, 0, false);
         lastMouseEvent = ev;
@@ -238,7 +240,7 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
         sendKeyEvent(ev);
     }
 
-    public static int remapKeycode(int kc) {
+    public static int remapKeycode(int kc, char c) {
         switch(kc) {
         case Keyboard.KEY_BACK:   return 0x08;
         case Keyboard.KEY_DELETE: return 0x2E;
@@ -254,7 +256,7 @@ public class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler, IBr
         case Keyboard.KEY_END:    return 0x23;
         case Keyboard.KEY_HOME:   return 0x24;
 
-        default: return kc;
+        default: return (int) c;
         }
     }
 
