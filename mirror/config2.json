@@ -1,0 +1,27 @@
+{
+	"1.33": {
+		"platforms": {
+			"win64": {
+				"@chrome_elf.dll.gz":            "a280808d8f2bd57b0c31b57ce1bb67a7f88e9ae3",
+				"@d3dcompiler_47.dll.gz":        "7fea3a5664ddb084d42eaaa85fbee2dda18c5c80",
+				"jcef.dll":                      "f38d4132a32af6a582cac466d11503be8a19c55e",
+				"jcef_helper.exe":               "c92e11119eb43748b9d00030dcfe0aaf9f38ae25",
+				"@libcef.dll.gz":                "acab0420630ceb95d47ca9d37adcf5489ad6c0f8",
+				"libEGL.dll":                    "981991a20cbce1f07533c4cceb6ea059041655a6",
+				"@libGLESv2.dll.gz":             "5431b3a826d3762c5d43c271b0a5acc1d67f8a9a",
+				"v8_context_snapshot.bin":       "fc1c53f3015e47ed1b124f2590fc6977a0a1647a",
+				"snapshot_blob.bin":             "40d1d396e147645c541032c86ae43830a557208c",
+				"@resources.pak.gz":             "2b86136f4f323f532892a5b1ea8f7404bbed8b6d",
+				"locales.zip":                   "cfcb38d58fed0c5f7988adf8ef777bbdf5cb71ab"
+			},
+			"shared": {
+				"chrome_100_percent.pak":     "a914f8da2e60f2b798f3393e5882becfea7c1985",
+				"chrome_200_percent.pak":     "3277ffb9aabe529915b71bbf0e48b623dfbcca0b",
+				"@devtools_resources.pak.gz": "66ad07f1f190d419c940d9a4dc5995b0906201ae",
+				"@icudtl.dat.gz":             "42a5033597e4be36ccfa16d19890049ba0e25a56",
+				"natives_blob.bin":           "427b4da3bd619d85381c36d61daf2ce392e07909"
+			}
+		},
+		"extract": [ "locales.zip" ]
+	}
+}

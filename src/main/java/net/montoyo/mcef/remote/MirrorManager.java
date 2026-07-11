@@ -16,7 +16,8 @@ import java.util.Random;
 public class MirrorManager {
 
     private static final Mirror[] defaultMirrors = new Mirror[] {
-            new Mirror("ds58-mcef-mirror", "https://ds58-mcef-mirror.ewr1.vultrobjects.com", Mirror.FLAG_SECURE)
+            new Mirror("Pepa3-github-mirror", "https://raw.githubusercontent.com/Pepa3/mcef/refs/heads/port-1.7.10/mirror", Mirror.FLAG_SECURE),
+            new Mirror("localhost", "http://localhost:8000", 0)
     };
 
     /**
