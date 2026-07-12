@@ -1,5 +1,5 @@
-This project contains modified and unmodified source files from the JCEF project https://code.google.com/p/javachromiumembedded/
-The following license applies to all file in the org.cef package, as well as all files in the native folder.
+This project contains modified and unmodified source files and binaries from the JCEF project https://github.com/chromiumembedded/java-cef
+The following license applies to all files in the org.cef package, as well as all files in the native folder and all folders in the mirror folder.
 
 Copyright (c) 2008-2013 Marshall A. Greenblatt. Portions Copyright (c)
 2006-2009 Google Inc. All rights reserved.
